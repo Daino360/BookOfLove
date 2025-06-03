@@ -1,137 +1,79 @@
-// app.js
-import { db, auth } from './firebase-config.js';
-import { 
-    collection, addDoc, serverTimestamp,
-    query, where, onSnapshot, orderBy 
-} from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
-import { 
-    GoogleAuthProvider, 
-    signInWithPopup, 
-    signOut,
-    onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
-
-// Ora puoi usare db, auth e tutte le funzioni importate
-
 document.addEventListener('DOMContentLoaded', function() {
     // Set default date to today
     document.getElementById('memoryDate').valueAsDate = new Date();
     
-    // DOM elements
+    // Get DOM elements
     const memoryForm = document.getElementById('memoryForm');
     const entriesList = document.getElementById('entriesList');
-    const signInButton = document.getElementById('signInButton');
-    const signOutButton = document.getElementById('signOutButton');
-    const submitButton = document.getElementById('submitButton');
+    const filterAuthor = document.getElementById('filterAuthor');
+    const filterMood = document.getElementById('filterMood');
+    const clearFilters = document.getElementById('clearFilters');
     
-    // Auth state listener
-	onAuthStateChanged(auth, (user) => {
-		if (user) {
-			// User is signed in
-			signInButton.classList.add('hidden');
-			signOutButton.classList.remove('hidden');
-			submitButton.disabled = false;
-			loadEntries();
-		} else {
-			// User is signed out
-			signInButton.classList.remove('hidden');
-			signOutButton.classList.add('hidden');
-			submitButton.disabled = true;
-			entriesList.innerHTML = '<div class="no-entries">Please sign in to view memories</div>';
-		}
-	});
+    // Initialize Firebase Realtime Database
+    const database = window.firebaseDatabase;
+    const memoriesRef = ref(database, 'memories');
     
-    // Sign in handler
-	signInButton.addEventListener('click', () => {
-		const provider = new GoogleAuthProvider();
-		signInWithPopup(auth, provider).catch(error => {
-			console.error("Sign in error:", error);
-			alert("Sign in failed. Please try again.");
-		});
-	});
-    
-    // Sign out handler
-	signOutButton.addEventListener('click', () => {
-		signOut(auth);
-	});
-    
-	// Form submission
-	memoryForm.addEventListener('submit', async function(e) {
-		e.preventDefault();
-		
-		const user = auth.currentUser;
-		if (!user) {
-			alert("Please sign in to save memories");
-			return;
-		}
-		
-		const title = document.getElementById('memoryTitle').value;
-		const date = document.getElementById('memoryDate').value;
-		const author = document.querySelector('input[name="author"]:checked').value;
-		const mood = document.querySelector('input[name="mood"]:checked').value;
-		const content = document.getElementById('memoryContent').value;
-		
-		try {
-			await addDoc(collection(db, "memories"), {
-				title,
-				date,
-				author,
-				mood,
-				content,
-				createdAt: serverTimestamp(),
-				userId: user.uid
-			});
-			
-			// Reset form
-			this.reset();
-			document.getElementById('memoryDate').valueAsDate = new Date();
-		} catch (error) {
-			console.error("Error saving memory:", error);
-			alert("Failed to save memory. Please try again.");
-		}
-	});
-    
-    // Filter handlers
-    document.getElementById('filterAuthor').addEventListener('change', filterEntries);
-    document.getElementById('filterMood').addEventListener('change', filterEntries);
-    document.getElementById('clearFilters').addEventListener('click', function(e) {
+    // Form submission handler
+    memoryForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        document.getElementById('filterAuthor').value = 'all';
-        document.getElementById('filterMood').value = 'all';
-        filterEntries();
+        
+        const title = document.getElementById('memoryTitle').value;
+        const date = document.getElementById('memoryDate').value;
+        const author = document.querySelector('input[name="author"]:checked').value;
+        const mood = document.querySelector('input[name="mood"]:checked').value;
+        const content = document.getElementById('memoryContent').value;
+        
+        // Create new memory object
+        const newMemory = {
+            title,
+            date,
+            author,
+            mood,
+            content,
+            createdAt: new Date().toISOString()
+        };
+        
+        // Save to Firebase
+        push(memoriesRef, newMemory)
+            .then(() => {
+                // Reset form
+                memoryForm.reset();
+                document.getElementById('memoryDate').valueAsDate = new Date();
+            })
+            .catch(error => {
+                console.error("Error saving memory:", error);
+                alert("Failed to save memory. Please try again.");
+            });
     });
     
-	function loadEntries() {
-		const user = auth.currentUser;
-		if (!user) return;
-		
-		entriesList.innerHTML = '<div class="no-entries">Loading memories...</div>';
-		
-		const q = query(
-			collection(db, "memories"),
-			where("userId", "==", user.uid),
-			orderBy("createdAt", "desc")
-		);
-		
-		onSnapshot(q, (snapshot) => {
-			entriesList.innerHTML = '';
-			
-			if (snapshot.empty) {
-				entriesList.innerHTML = '<div class="no-entries">No memories yet. Add your first one above!</div>';
-				return;
-			}
-			
-			snapshot.forEach(doc => {
-				const entry = doc.data();
-				entry.id = doc.id;
-				addEntryToDOM(entry);
-			});
-		}, (error) => {
-			console.error("Error loading memories:", error);
-			entriesList.innerHTML = '<div class="no-entries">Error loading memories. Please refresh.</div>';
-		});
-	}
+    // Load memories from Firebase
+    onValue(memoriesRef, (snapshot) => {
+        entriesList.innerHTML = '';
+        
+        if (!snapshot.exists()) {
+            entriesList.innerHTML = '<div class="no-entries">No memories yet. Add your first one above!</div>';
+            return;
+        }
+        
+        // Convert to array and sort by date (newest first)
+        const memories = [];
+        snapshot.forEach(childSnapshot => {
+            const memory = childSnapshot.val();
+            memory.id = childSnapshot.key;
+            memories.push(memory);
+        });
+        
+        memories.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // Add to DOM
+        memories.forEach(memory => {
+            addEntryToDOM(memory);
+        });
+    }, {
+        onlyOnce: false // Listen for real-time updates
+    });
     
+    // Add entry to DOM
     function addEntryToDOM(entry) {
         const noEntriesMsg = document.querySelector('.no-entries');
         
@@ -166,9 +108,20 @@ document.addEventListener('DOMContentLoaded', function() {
         entriesList.appendChild(entryElement);
     }
     
+    // Filter handlers
+    filterAuthor.addEventListener('change', filterEntries);
+    filterMood.addEventListener('change', filterEntries);
+    clearFilters.addEventListener('click', function(e) {
+        e.preventDefault();
+        filterAuthor.value = 'all';
+        filterMood.value = 'all';
+        filterEntries();
+    });
+    
+    // Filter entries function
     function filterEntries() {
-        const authorFilter = document.getElementById('filterAuthor').value;
-        const moodFilter = document.getElementById('filterMood').value;
+        const authorFilter = filterAuthor.value;
+        const moodFilter = filterMood.value;
         const entries = document.querySelectorAll('.entry-card');
         
         entries.forEach(entry => {

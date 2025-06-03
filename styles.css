@@ -34,7 +34,6 @@ header {
     border-radius: 10px;
     margin-bottom: 30px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    position: relative;
 }
 
 h1 {
@@ -45,30 +44,6 @@ h1 {
 .tagline {
     font-style: italic;
     opacity: 0.9;
-}
-
-#authContainer {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-}
-
-.auth-button {
-    background-color: rgba(255, 255, 255, 0.2);
-    border: 1px solid white;
-    color: white;
-    padding: 5px 15px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.auth-button:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-}
-
-.hidden {
-    display: none;
 }
 
 .app-container {
@@ -189,11 +164,6 @@ button:hover {
     background-color: var(--dark-color);
 }
 
-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-
 .entries-container {
     background: white;
     padding: 25px;
@@ -302,14 +272,5 @@ button:disabled {
     
     h1 {
         font-size: 2rem;
-    }
-    
-    header {
-        padding-top: 50px;
-    }
-    
-    #authContainer {
-        top: 10px;
-        right: 10px;
     }
 }
