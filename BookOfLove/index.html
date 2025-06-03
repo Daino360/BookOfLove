@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book of Love - Our Diary</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Book of Love</h1>
+            <p class="tagline">Our shared diary of beautiful moments</p>
+            <div id="authContainer">
+                <button id="signInButton" class="auth-button">Sign In</button>
+                <button id="signOutButton" class="auth-button hidden">Sign Out</button>
+            </div>
+        </header>
+        
+        <div class="app-container">
+            <section class="entry-form">
+                <h2 class="form-title">Add a New Memory</h2>
+                <form id="memoryForm">
+                    <div class="form-group">
+                        <label for="memoryTitle">Title</label>
+                        <input type="text" id="memoryTitle" placeholder="Our first date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="memoryDate">Date</label>
+                        <input type="date" id="memoryDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Who is writing?</label>
+                        <div class="author-select">
+                            <div class="author-option">
+                                <input type="radio" id="authorHim" name="author" value="him" checked>
+                                <label for="authorHim">Him</label>
+                            </div>
+                            <div class="author-option">
+                                <input type="radio" id="authorHer" name="author" value="her">
+                                <label for="authorHer">Her</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>How do you feel about this memory?</label>
+                        <div class="mood-select">
+                            <div class="mood-option">
+                                <input type="radio" id="moodHappy" name="mood" value="Happy" checked>
+                                <label for="moodHappy">😊 Happy</label>
+                            </div>
+                            <div class="mood-option">
+                                <input type="radio" id="moodExcited" name="mood" value="Excited">
+                                <label for="moodExcited">😃 Excited</label>
+                            </div>
+                            <div class="mood-option">
+                                <input type="radio" id="moodLoved" name="mood" value="Loved">
+                                <label for="moodLoved">🥰 Loved</label>
+                            </div>
+                            <div class="mood-option">
+                                <input type="radio" id="moodGrateful" name="mood" value="Grateful">
+                                <label for="moodGrateful">🙏 Grateful</label>
+                            </div>
+                            <div class="mood-option">
+                                <input type="radio" id="moodOther" name="mood" value="Other">
+                                <label for="moodOther">😌 Other</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="memoryContent">Description</label>
+                        <textarea id="memoryContent" placeholder="Describe what happened and how you felt..." required></textarea>
+                    </div>
+                    
+                    <button type="submit" id="submitButton">Save Memory</button>
+                </form>
+            </section>
+            
+            <section class="entries-container">
+                <h2 class="entries-title">Our Memories</h2>
+                
+                <div class="filter-controls">
+                    <select id="filterAuthor">
+                        <option value="all">All Authors</option>
+                        <option value="him">His Entries</option>
+                        <option value="her">Her Entries</option>
+                    </select>
+                    
+                    <select id="filterMood">
+                        <option value="all">All Moods</option>
+                        <option value="Happy">Happy</option>
+                        <option value="Excited">Excited</option>
+                        <option value="Loved">Loved</option>
+                        <option value="Grateful">Grateful</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    
+                    <button id="clearFilters">Clear Filters</button>
+                </div>
+                
+                <div class="entries-list" id="entriesList">
+                    <div class="no-entries">Loading memories...</div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
