@@ -1,3 +1,18 @@
+// app.js
+import { db, auth } from './firebase-config.js';
+import { 
+    collection, addDoc, serverTimestamp,
+    query, where, onSnapshot, orderBy 
+} from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
+import { 
+    GoogleAuthProvider, 
+    signInWithPopup, 
+    signOut,
+    onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js";
+
+// Ora puoi usare db, auth e tutte le funzioni importate
+
 document.addEventListener('DOMContentLoaded', function() {
     // Set default date to today
     document.getElementById('memoryDate').valueAsDate = new Date();
