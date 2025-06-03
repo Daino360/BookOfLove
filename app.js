@@ -40,45 +40,31 @@ document.addEventListener('DOMContentLoaded', function() {
         auth.signOut();
     });
     
-    // Form submission handler
-    memoryForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const user = auth.currentUser;
-        if (!user) {
-            alert("Please sign in to save memories");
-            return;
-        }
-        
-        const title = document.getElementById('memoryTitle').value;
-        const date = document.getElementById('memoryDate').value;
-        const author = document.querySelector('input[name="author"]:checked').value;
-        const mood = document.querySelector('input[name="mood"]:checked').value;
-        const content = document.getElementById('memoryContent').value;
-        
-        // Create new entry object
-        const entry = {
-            title,
-            date,
-            author,
-            mood,
-            content,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            userId: user.uid
-        };
-        
-        // Save to Firestore
-        db.collection("memories").add(entry)
-            .then(() => {
-                // Reset form
-                this.reset();
-                document.getElementById('memoryDate').valueAsDate = new Date();
-            })
-            .catch(error => {
-                console.error("Error saving memory:", error);
-                alert("Failed to save memory. Please try again.");
-            });
-    });
+	// Form submission
+	memoryForm.addEventListener('submit', async (e) => {
+	  e.preventDefault();
+	  
+	  const user = auth.currentUser;
+	  if (!user) return;
+
+	  try {
+		await addDoc(collection(db, "memories"), {
+		  title: document.getElementById('memoryTitle').value,
+		  date: document.getElementById('memoryDate').value,
+		  author: document.querySelector('input[name="author"]:checked').value,
+		  mood: document.querySelector('input[name="mood"]:checked').value,
+		  content: document.getElementById('memoryContent').value,
+		  createdAt: serverTimestamp(),
+		  userId: user.uid
+		});
+		
+		// Reset form
+		memoryForm.reset();
+		document.getElementById('memoryDate').valueAsDate = new Date();
+	  } catch (error) {
+		console.error("Error adding document: ", error);
+	  }
+	});
     
     // Filter handlers
     document.getElementById('filterAuthor').addEventListener('change', filterEntries);
@@ -90,34 +76,31 @@ document.addEventListener('DOMContentLoaded', function() {
         filterEntries();
     });
     
-    // Load entries from Firestore
-    function loadEntries() {
-        const user = auth.currentUser;
-        if (!user) return;
-        
-        entriesList.innerHTML = '<div class="no-entries">Loading memories...</div>';
-        
-        db.collection("memories")
-            .where("userId", "==", user.uid)
-            .orderBy("createdAt", "desc")
-            .onSnapshot(snapshot => {
-                entriesList.innerHTML = '';
-                
-                if (snapshot.empty) {
-                    entriesList.innerHTML = '<div class="no-entries">No memories yet. Add your first one above!</div>';
-                    return;
-                }
-                
-                snapshot.forEach(doc => {
-                    const entry = doc.data();
-                    entry.id = doc.id;
-                    addEntryToDOM(entry);
-                });
-            }, error => {
-                console.error("Error loading memories:", error);
-                entriesList.innerHTML = '<div class="no-entries">Error loading memories. Please refresh.</div>';
-            });
-    }
+	function loadEntries() {
+	  const user = auth.currentUser;
+	  if (!user) return;
+
+	  const q = query(
+		collection(db, "memories"),
+		where("userId", "==", user.uid),
+		orderBy("createdAt", "desc")
+	  );
+
+	  const unsubscribe = onSnapshot(q, (querySnapshot) => {
+		entriesList.innerHTML = '';
+		
+		if (querySnapshot.empty) {
+		  entriesList.innerHTML = '<div class="no-entries">No memories yet</div>';
+		  return;
+		}
+
+		querySnapshot.forEach((doc) => {
+		  addEntryToDOM({ id: doc.id, ...doc.data() });
+		});
+	  });
+
+	  return unsubscribe; // Useful for cleanup
+	}
     
     function addEntryToDOM(entry) {
         const noEntriesMsg = document.querySelector('.no-entries');
