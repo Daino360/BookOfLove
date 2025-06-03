@@ -10,6 +10,7 @@
   const firebaseConfig = {
     apiKey: "AIzaSyBh7R_Ms7ilYvdHIzM0dRWwJJ09Q-EAXB0",
     authDomain: "bookoflove-d6dd1.firebaseapp.com",
+    databaseURL: "https://bookoflove-d6dd1-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "bookoflove-d6dd1",
     storageBucket: "bookoflove-d6dd1.firebasestorage.app",
     messagingSenderId: "293815616308",
